@@ -1,0 +1,49 @@
+---
+- name: Install Ceph aio in ubuntu 20.04
+  hosts: "*"
+  gather_facts: true
+  become: true
+
+  tasks:
+    - name: Configure the hostname 
+      ansible.builtin.hostname:
+        name: ceph
+      register: result
+    
+    - name: Print the hostname
+      ansible.builtin.debug:
+        var: result
+    
+    - name: Copy the installation script
+      ansible.builtin.copy:
+        src: /config/workspace/Ceph-AIO/install.sh
+        dest: /home/
+      tags:
+        copy
+    
+    - name: Make file executable 
+      file:
+        path:  /home/install.sh
+        mode: 0777
+    
+    - name: make hosts entry in /etc/hosts 
+      ansible.builtin.lineinfile:
+        path:  /etc/hosts
+        line: "{{ ansible_default_ipv4.address }} ceph.homelab.com ceph"
+      register: hostname 
+    
+    - name: print the result
+      ansible.builtin.debug:
+        var: hostname
+    
+    - name: run the script
+      shell: |
+        cd /home/
+        mount /dev/sr1 /cdrom
+        ./install.sh
+      tags:
+        ceph-install
+
+  
+  vars:
+    ansible_become_pass: 123
